@@ -1,9 +1,14 @@
 import json
 import base64
+import queue
 import requests
 import numpy as np
+from threading import Thread
 import matplotlib.pyplot as plt
 import urllib.parse as urlparse
+from queue import Queue
+import time
+import copy
 
 def request_derivative(equation: str, variables: dict):
     wolfree_url = "" +\
@@ -29,7 +34,7 @@ def request_derivative(equation: str, variables: dict):
     for var in variables:
         error = variables[var]["error"]
         
-        request_structure += f'{{"t":3,"c":[[{{"t":0,"v":"("}},{{"t":48,"c":[[{{"t":0,"v":"{equation}"}}],[{{"t":0,"v":"x"}}]]}},{{"t":0,"v":"*{error})"}}],[{{"t":0,"v":"2"}}]]}},'
+        request_structure += f'{{"t":3,"c":[[{{"t":0,"v":"("}},{{"t":48,"c":[[{{"t":0,"v":"{equation}"}}],[{{"t":0,"v":"{var}"}}]]}},{{"t":0,"v":"*{error})"}}],[{{"t":0,"v":"2"}}]]}},'
         if var != list(variables.keys())[-1]:
             request_structure += '{"t":0,"v":"+"},'
     
@@ -43,8 +48,6 @@ def request_derivative(equation: str, variables: dict):
     
     request_input = base64.b64encode(bytes(request_structure, 'utf-8'))
     request_input = urlparse.quote_plus(request_input)
-    
-    print(request_input)
 
     r = requests.get(wolfree_url.format(request_input=request_input))
     data = r.text[:-2]
@@ -61,20 +64,69 @@ def request_derivative(equation: str, variables: dict):
     return solution
     
     
+class Worker(Thread):
+    def __init__(self, q: Queue, solutions: list, *args, **kwargs) -> None:
+        self.q = q
+        self.solutions = solutions
+        super().__init__(*args, **kwargs)
+        
+        self.daemon = True
+    
+    def run(self):
+        while True:
+            try:
+                work = self.q.get(timeout=3)  # 3s timeout
+            except queue.Empty:
+                return
+            
+            # do whatever work you have to do on work
+            solution = request_derivative(work[0], work[1])
+            self.solutions.append(solution)
+            self.q.task_done()
+
+
+def make_requests(equation:str, variables: dict):
+    n_threads = 5
+    threads = []
+    queue = Queue()
+    solutions = []
+    
+    values_length = len(variables[list(variables.keys())[0]]["value"])
+    
+    
+    for i in range(values_length):
+        variables_copy = copy.deepcopy(variables)
+        for var in variables_copy:
+            variables_copy[var]["value"] = variables_copy[var]["value"][i]
+            queue.put((equation, variables_copy))
+    
+    for i in range(n_threads):
+        threads.append(Worker(queue, solutions))
+    
+    for thread in threads:
+        thread.start()        
+        
+    for thread in threads:
+        thread.join()
+        
+    print(solutions)
+    
+
 def main():
-    equation = "x + y + ln(x/y)^2"
+    equation = "ln(x)"
     variables = {
         "x": {
-            "value": 1,
+            "value": [1, 2, 3, 5],
             "error": 0.1
         },
         "y": {
-            "value": 1,
+            "value": [1, 7, 21, 3],
             "error": 0.1
         },
     }
-    solution = request_derivative(equation, variables)
-    print(solution)
+    
+    make_requests(equation, variables)
+    
 
 if __name__ == "__main__":
     main()
