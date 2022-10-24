@@ -10,58 +10,8 @@ from queue import Queue
 import time
 import copy
 
-def request_derivative(equation: str, variables: dict):
-    wolfree_url = "" +\
-        "https://api.wolframalpha.com/v2/query?"+\
-        "&callback=jQuery36108552903897608751_1666553041562"+\
-        "&output=json"+\
-        "&reinterpret=true"+\
-        "&scantimeout=30"+\
-        "&podtimeout=30"+\
-        "&formattimeout=30"+\
-        "&parsetimeout=30"+\
-        "&totaltimeout=30"+\
-        "&podstate=Step-by-step%20solution"+\
-        "&podstate=Step-by-step"+\
-        "&podstate=Show%20all%20steps"+\
-        "&i2d=true"+\
-        "&input={request_input}"+\
-        "&appid=H9V325-HTALUWHKGK"+\
-        "&_=1666553041563"
-    
-    request_structure = '[{"t":0,"v":"sqrt("},'
-    
-    for var in variables:
-        error = variables[var]["error"]
-        
-        request_structure += f'{{"t":3,"c":[[{{"t":0,"v":"("}},{{"t":48,"c":[[{{"t":0,"v":"{equation}"}}],[{{"t":0,"v":"{var}"}}]]}},{{"t":0,"v":"*{error})"}}],[{{"t":0,"v":"2"}}]]}},'
-        if var != list(variables.keys())[-1]:
-            request_structure += '{"t":0,"v":"+"},'
-    
-    request_structure += '{"t":0,"v":")"}'
-    
-    for var in variables:
-        value = variables[var]["value"]
-        request_structure += f',{{"t":0,"v":",{var}={value}"}}'
-    
-    request_structure += ']'
-    
-    request_input = base64.b64encode(bytes(request_structure, 'utf-8'))
-    request_input = urlparse.quote_plus(request_input)
-
-    r = requests.get(wolfree_url.format(request_input=request_input))
-    data = r.text[:-2]
-    data = data.replace(urlparse.parse_qs(urlparse.urlparse(r.url).query)["callback"][0], "")
-    data = data[1:]
-    
-    data = json.loads(data)
-    solution = ""
-    for pod in data["queryresult"]["pods"]:
-        if pod["title"] == "Substitution":
-            solution = pod["subpods"][0]["plaintext"]
-            break
-    
-    return solution
+from wolfram_parser import WolframInputGenerator
+from evaluate_solutions import eval_all
     
     
 class Worker(Thread):
@@ -78,28 +28,55 @@ class Worker(Thread):
                 work = self.q.get(timeout=3)  # 3s timeout
             except queue.Empty:
                 return
-            
-            # do whatever work you have to do on work
-            solution = request_derivative(work[0], work[1])
-            self.solutions.append(solution)
+
+            parameter, n, url, search_term = work
+
+            # Get and parse data
+            data = requests.get(url).text
+            data = data.replace("jQuery36108552903897608751_1666553041562", "")
+            data = data[1:-2]
+            data = json.loads(data)
+
+            # Get solution
+            solution = None
+            for pod in data["queryresult"]["pods"]:
+                if pod["title"] == search_term:
+                    solution = pod["subpods"][0]["plaintext"]
+                    break
+
+            if solution == None:
+                for pod in data["queryresult"]["pods"]:
+                    if pod["title"] == "Result":
+                        solution = pod["subpods"][0]["plaintext"]
+                        break
+
+            self.solutions[parameter][n] = solution
             self.q.task_done()
 
 
 def make_requests(equation:str, variables: dict):
+    # Threads
     n_threads = 5
     threads = []
+
+    # Work
+    wolfram = WolframInputGenerator()
+    request_errors = wolfram.gaussian_error(equation, variables)
+    request_functions = wolfram.function_eval(equation, variables)
+
+    solutions = {
+        "functions": {},
+        "errors": {}
+    }
+
     queue = Queue()
-    solutions = []
-    
-    values_length = len(variables[list(variables.keys())[0]]["value"])
-    
-    
-    for i in range(values_length):
-        variables_copy = copy.deepcopy(variables)
-        for var in variables_copy:
-            variables_copy[var]["value"] = variables_copy[var]["value"][i]
-            queue.put((equation, variables_copy))
-    
+
+    for n, url in enumerate(request_errors[0]):
+        queue.put(("errors", n, url, request_errors[1]))
+
+    for n, url in enumerate(request_functions[0]):
+        queue.put(("functions", n, url, request_functions[1]))
+
     for i in range(n_threads):
         threads.append(Worker(queue, solutions))
     
@@ -109,25 +86,22 @@ def make_requests(equation:str, variables: dict):
     for thread in threads:
         thread.join()
         
-    print(solutions)
+    return solutions
     
 
 def main():
     equation = "ln(x)"
     variables = {
         "x": {
-            "value": [1, 2, 3, 5],
-            "error": 0.1
-        },
-        "y": {
-            "value": [1, 7, 21, 3],
+            "value": [1, 3, 500, 10, 1, 3, 5],
             "error": 0.1
         },
     }
-    
-    make_requests(equation, variables)
-    
+    solution = make_requests(equation, variables)
+    function_values = eval_all(solution)
 
+    for i in function_values:
+        print(i)
 if __name__ == "__main__":
     main()
 
