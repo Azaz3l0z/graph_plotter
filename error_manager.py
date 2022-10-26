@@ -4,15 +4,21 @@ from math import log10, floor
 class ScientificErrorNotation(object):
     def __init__(self, value: float, error: float):
         self._value = value
-        self._error = error
+        self._error = error      
+        
+        self.rounding_index = self.round_to_1(self._error)
 
-        # print(value, error)
+    def original_value(self):
+        return self._value
+        
+    def original_error(self):
+        return self._error
 
     def value(self):
-        return self._value
+        return round(self._value, self.rounding_index)
 
     def error(self):
-        return self._error
+        return round(self._error, self.rounding_index)
 
     @staticmethod
     def round_to_1(x):
@@ -30,7 +36,6 @@ class ScientificErrorNotation(object):
         return round_to_digit
     
     def __str__(self):
-        error_str = str(self._error)
-        rounding_index = self.round_to_1(self._error)
+       
 
-        return f'{round(self._value, rounding_index)} +- {round(self._error, rounding_index)}'
+        return f'{self.value()} +- {self.error()}'
