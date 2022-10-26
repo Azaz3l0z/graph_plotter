@@ -33,13 +33,19 @@ class WolframInputGenerator(object):
         "&formattimeout=30"+\
         "&parsetimeout=30"+\
         "&totaltimeout=30"+\
-        "&podstate=Step-by-step%20solution"+\
-        "&podstate=Step-by-step"+\
-        "&podstate=Show%20all%20steps"+\
+        "&podstate=Approximate form"+\
         "&i2d=true"+\
         "&input={request_input}"+\
         "&appid=H9V325-HTALUWHKGK"+\
         "&_=1666553041563"
+
+    @staticmethod
+    def __encode(code):
+        code = base64.b64encode(bytes(code, 'utf-8'))
+        code = urlparse.quote_plus(code)
+
+        return code
+
 
     def url_generator(self, codes):
         """
@@ -95,8 +101,7 @@ class WolframInputGenerator(object):
             
             # Transform to base64 url encoded format
             request_input = self.wolfram_input.format(expression=request_input)
-            request_input = base64.b64encode(bytes(request_input, 'utf-8'))
-            request_input = urlparse.quote_plus(request_input)
+            request_input = self.__encode(request_input)
 
             request_input_list.append(request_input)
             
@@ -124,8 +129,7 @@ class WolframInputGenerator(object):
 
             # Transform to base64 url encoded format
             request_input = self.wolfram_input.format(expression=request_input)
-            request_input = base64.b64encode(bytes(request_input, 'utf-8'))
-            request_input = urlparse.quote_plus(request_input)
+            request_input = self.__encode(request_input)
 
             request_input_list.append(request_input)
         

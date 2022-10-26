@@ -8,6 +8,7 @@ def eval_all(dict_):
 
         # Remove equal signs and evaluate
         for n, item in enumerate(items):
+            # Get solution (right hand of equal sign)
             if "=" in item:
                 items[n] = item.split("=")[1]
             

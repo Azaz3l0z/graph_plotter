@@ -33,7 +33,4 @@ class ScientificErrorNotation(object):
         error_str = str(self._error)
         rounding_index = self.round_to_1(self._error)
 
-        return "
-
-t = ScientificErrorNotation(113213, 12)
-print(t)
+        return f'{round(self._value, rounding_index)} +- {round(self._error, rounding_index)}'
