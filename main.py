@@ -65,6 +65,7 @@ def main():
     
     x_fit = np.linspace(min(x), max(x), 1000)
     plt.plot(x_fit, fit(x_fit))
+    plt.subplots_adjust(left=0.17)
     plt.savefig("fig.png")
     plt.show()
     
