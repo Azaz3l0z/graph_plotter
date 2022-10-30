@@ -166,5 +166,4 @@ class WolframInputGenerator(object):
                     new_variables[var]["error"] = variables[var]["error"][i]
             
             variables_list.append(copy.deepcopy(new_variables))
-            
         return variables_list

@@ -36,6 +36,4 @@ class ScientificErrorNotation(object):
         return round_to_digit
     
     def __str__(self):
-       
-
         return f'{self.value()} +- {self.error()}'
