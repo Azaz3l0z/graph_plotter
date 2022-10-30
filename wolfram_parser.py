@@ -80,7 +80,7 @@ class WolframInputGenerator(object):
                 request_input += ","
                 request_input += self.partial_derivative.format(expression=function, variable=var)
                 request_input += ","
-                request_input += self.normal_expression.format(expression="0.1")
+                request_input += self.normal_expression.format(expression=f'({variables[var]["error"]})')
                 request_input += ","
                 request_input += self.normal_expression.format(expression=")^2")
 
@@ -166,5 +166,5 @@ class WolframInputGenerator(object):
                     new_variables[var]["error"] = variables[var]["error"][i]
             
             variables_list.append(copy.deepcopy(new_variables))
-
+            
         return variables_list
