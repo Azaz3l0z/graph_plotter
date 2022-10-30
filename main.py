@@ -66,6 +66,7 @@ def main():
     x_fit = np.linspace(min(x), max(x), 1000)
     plt.plot(x_fit, fit(x_fit))
     plt.show()
+    plt.savefig("fig.png")
     
     # Save to .csv
     df = {"x": x, "y": y, "err_y": err_y}
