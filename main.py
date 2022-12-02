@@ -5,48 +5,28 @@ import matplotlib.pyplot as plt
 from error_manager import ScientificErrorNotation
 from thread_requests import make_requests
 from evaluate_solutions import eval_all
+from plotter import awesome_plot
     
     
 def main():
     # Declare equations and variables
-    n = np.linspace(0.1, 2, 5)
-    equation = "4*pi^2*b/(pi*(D/2)^2*P*a)"
+    equation = "x"
     variables = {
-        "a": {
-            "value": [1.16*10**(-2)],
-            "error": 0.04*10**(-2)
+        "x": {
+            "value": [36, 39, 44, 50, 56, 62],
+            "error": 2
         },
-        "P": {
-            "value": [1.01*10**5],
-            "error": 0
-        },
-        "b": {
-            "value": [35*10**(-3)],
-            "error": 0.6*10**(-3)
-        },
-        "D": {
-            "value": [32.5*10**(-3)],
-            "error": 0.1*10**(-3)
-        },
+        "y": {
+            "value": [0.02, 0.019, 0.018, 0.017, 0.016, 0.015],
+            "error": (0.02-0.019)*0.20
+        }
     }
     
     # Get the solutions from wolfram alpha and evaluate them
-    solution = make_requests(equation, variables)
-    function_values = eval_all(solution)
-    for i in function_values:
-        print(i)
-
-
+    func_1 = eval_all(make_requests(equation, variables))
+    
+    for i in func_1:
+        print(str(i).replace("+-", "pm"))
+        
 if __name__ == "__main__":
     main()
-
-# for x_n in variables:
-    
-
-
-# print(x, y)   
-
-# plt.plot(x, y, color="red", marker=".", linestyle="-")
-# plt.xlabel("$\infty$")
-# plt.ylabel("Lol2")
-# plt.show()

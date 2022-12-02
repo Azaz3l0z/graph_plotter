@@ -14,12 +14,12 @@ def eval_all(dict_):
             
             # Get solution (right hand of equal sign)
             if "=" in item:
-                items[n] = item.split("=")[1]
+                item = item.split("=")[1]
             
             if "≈" in item:
-                items[n] = item.split("≈")[1]
+                item = item.split("≈")[1]
             
-            items[n] = eval(items[n].strip())
+            items[n] = eval(item.strip())
 
         dict_[key] = items
 

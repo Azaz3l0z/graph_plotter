@@ -1,8 +1,8 @@
 import numpy as np
-import matplotlib as plt
+import matplotlib.pyplot as plt
 
 from error_manager import ScientificErrorNotation
-def awesome_plot(x: list, y: list, err_y: list, fig_name: str = "fig.png"):
+def awesome_plot(x: list, y: list, err_y: list, labels: list = ["x", "y"], fig_name: str = "fig.png"):
     # Fit data linearly and taking errors into account (weight)
     coeff, covariance = np.polyfit(x, y, 1, w=err_y, cov=True)
     fit = np.poly1d(coeff)
@@ -30,8 +30,9 @@ def awesome_plot(x: list, y: list, err_y: list, fig_name: str = "fig.png"):
     # Plot
     plt.errorbar(x, y, fmt='or', yerr=err_y)
     plt.plot(x, fit(x))
-    plt.xlabel("$h$ / mm", fontsize=16)
-    plt.ylabel("$\\tau_0^2$ / s$^2$", fontsize=16)
+    plt.xlabel(labels[0], fontsize=16)
+    plt.ylabel(labels[1], fontsize=16)
+    plt.ticklabel_format(style="sci", axis="x", scilimits=(0,0))
     
     x_fit = np.linspace(min(x), max(x), 1000)
     plt.plot(x_fit, fit(x_fit))
